@@ -73,14 +73,16 @@ public:
 		out << "Base class (please, initialise L- or M-Graph)";
 		return out;
 	}
-	virtual void insertEdge(Edge, int, int) = 0;
+	virtual void insertEdge(Edge&, int, int) = 0;
 	virtual void insertVertex(int) = 0;
+	virtual void deleteVertex(int) = 0;
+	virtual void deleteEdge(Edge&) = 0;
 };
 
 
 class LGraph : public AbstractGraph {
+private:
 	vector<list<Edge*>> listform;
-
 public:
 	ostream& print(ostream& out) const override {
 		for (int i = 0; i < listform.size(); i++) {
@@ -93,22 +95,37 @@ public:
 		}
 		return out;
 	}
-	void insertEdge(Edge e, int v1, int v2) override {
-		listform[v1].push_back(new Edge(e));
+
+	void insertEdge(Edge& e, int v1, int v2) override {
+		listform[v1].push_back(&e);
 	}
-	void insertVertex(int index) {
+
+	void insertVertex(int index) override {
 		listform.insert(listform.begin() + index, list<Edge*>());
+	}
+
+	void deleteVertex(int index) override {
+		listform.erase(listform.begin() + index);
+	}
+
+	void deleteEdge(Edge& e) override{
+		for (int i = 0; i < listform.size(); i++) {
+			for (auto it = listform[i].begin();
+				it != listform[i].end(); it++) {
+				if (*it == &e) {
+					*it = nullptr;
+					return;
+				}
+			}
+		}
 	}
 };
 
 
 class MGraph : public AbstractGraph {
+private:
 	vector<vector<Edge*>> matform;
 public:
-
-	void deleteVertex() {
-
-	}
 	
 	ostream& print(ostream& out) const override {
 		for (int i = 0; i < matform.size(); i++) {
@@ -123,8 +140,8 @@ public:
 		return out;
 	}
 
-	void insertEdge(Edge e, int v1, int v2) override {
-		matform[v1][v2] = new Edge(e);
+	void insertEdge(Edge& e, int v1, int v2) override {
+		matform[v1][v2] = &e;
 	}
 
 	void insertVertex(int index) override {
@@ -133,6 +150,25 @@ public:
 		size++;
 		for (int i = 0; i < size; i++) {
 			matform[i].insert(matform[i].begin() + index, nullptr);
+		}
+	}
+
+	void deleteVertex(int index) override {
+		matform.erase(matform.begin() + index);
+		for (int i = 0; i < matform.size(); i++) {
+			matform[i].erase(matform[i].begin() + index);
+		}
+	}
+
+	void deleteEdge(Edge& e) override {
+		for (int i = 0; i < matform.size(); i++) {
+			for (auto it = matform[i].begin();
+				it != matform[i].end(); it++) {
+				if (*it == &e) {
+					*it = nullptr;
+					return;
+				}
+			}
 		}
 	}
 
@@ -154,33 +190,39 @@ public:
 			absgraph = new LGraph();
 	}
 
-	void insertEdge(Vertex& v1, Vertex& v2, int w) {
-		auto it1 = vertices.begin();
-		for (; it1 != vertices.end(); it1++) {
-			if (*it1 == &v1)
-				break;
+
+	void insertVertex(Vertex& v) {
+		auto it = vertices.begin();
+		for (; it != vertices.end(); it++) {
+			if (*it == &v)
+				return;
 		}
-		if (it1 == vertices.end()) {
-			vertices.push_back(&v1);
-			absgraph->insertVertex(vertices.size()-1);
-		}
-		auto it2 = vertices.begin();
-		for (; it2 != vertices.end(); it2++) {
-			if (*it2 == &v2)
-				break;
-		}
-		if (it2 == vertices.end()) {
-			vertices.push_back(&v2);
-			absgraph->insertVertex(vertices.size()-1);
-		}
-		for (it1 = vertices.begin(); *it1 != &v1; it1++);
-		for (it2 = vertices.begin(); *it2 != &v2; it2++);
-		absgraph->insertEdge(Edge(v1,v2,w), it1 - vertices.begin(), it2 - vertices.begin());
-		if (!directed)
-			absgraph->insertEdge(Edge(v1, v2, w), it2 - vertices.begin(), it1 - vertices.begin());
+		vertices.push_back(&v);
+		absgraph->insertVertex(vertices.size() - 1);
 	}
+
 	void insertEdge(Edge& e) {
-		insertEdge(*e.v1,*e.v2, e.getWeight());
+		insertVertex(*e.getV1());
+		insertVertex(*e.getV2());
+		auto it1 = vertices.begin();
+		for (; *it1 != e.getV1(); it1++);
+		auto it2 = vertices.begin();
+		for (; *it2 != e.getV2(); it2++);
+		absgraph->insertEdge(e, it1 - vertices.begin(), it2 - vertices.begin());
+		if (!directed)
+			absgraph->insertEdge(e, it2 - vertices.begin(), it1 - vertices.begin());
+	}
+
+	void deleteVertex(Vertex& v) {
+		auto it1 = vertices.begin();
+		for (it1 = vertices.begin(); *it1 != &v; it1++);
+		if (it1 != vertices.end())
+			absgraph->deleteVertex(it1 - vertices.begin());
+		vertices.erase(it1);
+	}
+
+	void deleteEdge(Edge& e) {
+		absgraph->deleteEdge(e);
 	}
 
 	friend ostream& operator<<(ostream& s, SimpleGraph& g) {
@@ -202,9 +244,11 @@ int main() {
 	SimpleGraph g = SimpleGraph(false,true);
 
 	g.insertEdge(e1);
-	g.insertEdge(e2);
-	g.insertEdge(e3);
-	g.insertEdge(e4);
+	//g.insertEdge(e2);
+	//g.insertEdge(e3);
+	//g.insertEdge(e4);
+	//g.deleteVertex(v3);
+	g.deleteEdge(e1);
 
 	cout << g;
 }
