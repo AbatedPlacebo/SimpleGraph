@@ -66,6 +66,15 @@ private:
 	friend class MGraph;
 	friend class LGraph;
 public:
+
+	class abstractedgeiterator {
+
+	};
+
+	class abstractoutedgeiterator {
+
+	};
+
 	friend ostream& operator<<(ostream& out, const AbstractGraph& a) {
 		return a.print(out);
 	}
@@ -113,7 +122,7 @@ public:
 			for (auto it = listform[i].begin();
 				it != listform[i].end(); it++) {
 				if (*it == &e) {
-					*it = nullptr;
+					listform[i].erase(it);
 					return;
 				}
 			}
@@ -181,6 +190,67 @@ private:
 	bool graphType;
 	bool directed;
 public:
+
+	class vertex_iterator {
+	private:
+		vector<Vertex*> vertices;
+		int index;
+	public:
+		vertex_iterator() {
+			index = 0;
+		}
+		vertex_iterator(vector<Vertex*> elem, int index) {
+			this->index = index;
+			vertices = elem;
+		}
+		void operator+(int index) {
+			this->index += index;
+		}
+		void operator--(int index) {
+			this->index -= index;
+		}
+		Vertex* operator*() {
+			return this->vertices[index];
+		}
+	};
+
+	class edge_iterator {
+		edge_iterator() {
+
+		}
+	};
+
+	class outedge_iterator {
+		outedge_iterator() {
+
+		}
+	};
+
+	vertex_iterator vertexBegin() {
+		return vertex_iterator(vertices,0);
+	}
+
+	edge_iterator edgeBegin() {
+
+	}
+
+	outedge_iterator outEdgeBegin() {
+
+	}
+
+	vertex_iterator vertexEnd() {
+		return vertex_iterator(vertices, vertices.size());
+	}
+
+	edge_iterator edgeEnd() {
+
+	}
+
+	outedge_iterator outEdgeEnd() {
+
+	}
+
+
 	SimpleGraph(bool graphType, bool directed) {
 		this->directed = directed;
 		this->graphType = graphType;
@@ -233,22 +303,23 @@ public:
 };
 
 int main() {
+
 	Vertex v1 = Vertex(1);
 	Vertex v2 = Vertex(2);
 	Vertex v3 = Vertex(3);
+
 	Edge e1 = Edge(v1, v2, 3);
 	Edge e2 = Edge(v2, v3, 2);
 	Edge e3 = Edge(v1, v3, 1);
 	Edge e4 = Edge(v1, v1, 1);
 
-	SimpleGraph g = SimpleGraph(false,true);
-
+	SimpleGraph g = SimpleGraph(true,true);
 	g.insertEdge(e1);
-	//g.insertEdge(e2);
-	//g.insertEdge(e3);
-	//g.insertEdge(e4);
-	//g.deleteVertex(v3);
-	g.deleteEdge(e1);
+	g.insertEdge(e2);
+	g.insertEdge(e3);
+	g.insertEdge(e4);
+	g.deleteVertex(v3);
+	g.deleteEdge(e4);
 
 	cout << g;
 }
